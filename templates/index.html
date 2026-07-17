@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Discover YouTube videos with meaningful English word IDs — a word hunting dashboard">
+    <title>YT Word Hunter — Discovered Videos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ── Reset & Base ─────────────────────────────────────────── */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #16161f;
+            --bg-card-hover: #1c1c28;
+            --bg-glass: rgba(22, 22, 31, 0.7);
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-accent: rgba(99, 102, 241, 0.3);
+            --text-primary: #f0f0f5;
+            --text-secondary: #8b8ba0;
+            --text-muted: #55556a;
+            --accent-primary: #6366f1;
+            --accent-secondary: #818cf8;
+            --accent-glow: rgba(99, 102, 241, 0.15);
+            --success: #22c55e;
+            --success-glow: rgba(34, 197, 94, 0.15);
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gradient-1: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            --gradient-2: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #6366f1 100%);
+            --gradient-3: linear-gradient(135deg, #f43f5e 0%, #e879f9 100%);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+            --shadow-glow: 0 0 30px rgba(99, 102, 241, 0.15);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Animated Background ──────────────────────────────────── */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            background-image:
+                linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .bg-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: 0;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .bg-orb-1 {
+            width: 500px;
+            height: 500px;
+            background: rgba(99, 102, 241, 0.08);
+            top: -100px;
+            right: -100px;
+            animation-delay: 0s;
+        }
+
+        .bg-orb-2 {
+            width: 400px;
+            height: 400px;
+            background: rgba(139, 92, 246, 0.06);
+            bottom: -50px;
+            left: -100px;
+            animation-delay: -7s;
+        }
+
+        .bg-orb-3 {
+            width: 300px;
+            height: 300px;
+            background: rgba(6, 182, 212, 0.05);
+            top: 50%;
+            left: 50%;
+            animation-delay: -14s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, -30px) scale(1.05); }
+            50% { transform: translate(-20px, 20px) scale(0.95); }
+            75% { transform: translate(15px, 15px) scale(1.02); }
+        }
+
+        /* ── Container ────────────────────────────────────────────── */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* ── Header ───────────────────────────────────────────────── */
+        .header {
+            padding: 48px 0 32px;
+            text-align: center;
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 100px;
+            background: var(--accent-glow);
+            border: 1px solid var(--border-accent);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 24px;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        .header-badge .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .header h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 900;
+            letter-spacing: -2px;
+            line-height: 1.1;
+            margin-bottom: 16px;
+            animation: fadeInUp 0.7s ease-out;
+        }
+
+        .header h1 .gradient-text {
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        /* ── Stats Bar ────────────────────────────────────────────── */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 32px 0 48px;
+            animation: fadeInUp 0.9s ease-out;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+
+        .stat-card:nth-child(1)::before { background: var(--gradient-1); }
+        .stat-card:nth-child(2)::before { background: var(--gradient-2); }
+        .stat-card:nth-child(3)::before { background: var(--gradient-3); }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-accent);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card:nth-child(2) .stat-value {
+            background: var(--gradient-2);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        .stat-card:nth-child(3) .stat-value {
+            background: var(--gradient-3);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        /* ── Section Title ────────────────────────────────────────── */
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .section-title h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .section-title .count-badge {
+            padding: 4px 12px;
+            border-radius: 100px;
+            background: var(--accent-glow);
+            border: 1px solid var(--border-accent);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ── Video Grid ───────────────────────────────────────────── */
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 24px;
+            padding-bottom: 80px;
+        }
+
+        .video-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeInUp 0.6s ease-out backwards;
+            position: relative;
+        }
+
+        .video-card:hover {
+            transform: translateY(-6px);
+            border-color: var(--border-accent);
+            box-shadow: var(--shadow-lg), var(--shadow-glow);
+        }
+
+        .video-card:hover .thumbnail-overlay {
+            opacity: 1;
+        }
+
+        .video-card:hover .play-btn {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+
+        .thumbnail-wrapper {
+            position: relative;
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            background: var(--bg-secondary);
+        }
+
+        .thumbnail-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .video-card:hover .thumbnail-wrapper img {
+            transform: scale(1.05);
+        }
+
+        .thumbnail-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .play-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            width: 64px;
+            height: 64px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .play-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--bg-primary);
+            margin-left: 3px;
+        }
+
+        .video-info {
+            padding: 20px;
+        }
+
+        .video-id-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: var(--radius-sm);
+            background: var(--success-glow);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--success);
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .video-id-badge:hover {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: rgba(34, 197, 94, 0.4);
+        }
+
+        .video-id-badge .copy-icon {
+            width: 14px;
+            height: 14px;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .video-id-badge:hover .copy-icon {
+            opacity: 1;
+        }
+
+        .video-title {
+            font-size: 1rem;
+            font-weight: 600;
+            line-height: 1.5;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .video-author {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .video-author svg {
+            width: 14px;
+            height: 14px;
+            fill: var(--text-muted);
+        }
+
+        .video-card a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* ── Empty State ──────────────────────────────────────────── */
+        .empty-state {
+            text-align: center;
+            padding: 80px 24px;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 24px;
+            opacity: 0.6;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .empty-state p {
+            color: var(--text-secondary);
+            max-width: 400px;
+            margin: 0 auto 24px;
+            line-height: 1.6;
+        }
+
+        .code-block {
+            display: inline-block;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--accent-secondary);
+        }
+
+        /* ── Toast notification ───────────────────────────────────── */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--bg-card);
+            border: 1px solid var(--border-accent);
+            border-radius: var(--radius-md);
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--accent-secondary);
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ── Footer ───────────────────────────────────────────────── */
+        .footer {
+            text-align: center;
+            padding: 32px 0 48px;
+            color: var(--text-muted);
+            font-size: 13px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .footer a {
+            color: var(--accent-secondary);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* ── Animations ───────────────────────────────────────────── */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Stagger animation for video cards */
+        .video-card:nth-child(1) { animation-delay: 0.05s; }
+        .video-card:nth-child(2) { animation-delay: 0.10s; }
+        .video-card:nth-child(3) { animation-delay: 0.15s; }
+        .video-card:nth-child(4) { animation-delay: 0.20s; }
+        .video-card:nth-child(5) { animation-delay: 0.25s; }
+        .video-card:nth-child(6) { animation-delay: 0.30s; }
+        .video-card:nth-child(7) { animation-delay: 0.35s; }
+        .video-card:nth-child(8) { animation-delay: 0.40s; }
+        .video-card:nth-child(9) { animation-delay: 0.45s; }
+
+        /* ── Responsive ───────────────────────────────────────────── */
+        @media (max-width: 768px) {
+            .header { padding: 32px 0 24px; }
+            .header h1 { font-size: 2rem; letter-spacing: -1px; }
+            .stats-bar { grid-template-columns: 1fr; }
+            .video-grid { grid-template-columns: 1fr; }
+            .stat-value { font-size: 2rem; }
+        }
+
+        /* ── Refresh button ───────────────────────────────────────── */
+        .refresh-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--gradient-1);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-lg), 0 0 20px rgba(99, 102, 241, 0.3);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-lg), 0 0 30px rgba(99, 102, 241, 0.5);
+        }
+
+        .refresh-btn:active {
+            transform: scale(0.95);
+        }
+
+        .refresh-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+            transition: transform 0.6s ease;
+        }
+
+        .refresh-btn.spinning svg {
+            animation: spin 0.8s ease;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background -->
+    <div class="bg-grid"></div>
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-badge">
+                <span class="dot"></span>
+                YouTube Word Hunter
+            </div>
+            <h1>
+                Discovered <span class="gradient-text">Word Videos</span>
+            </h1>
+            <p>
+                Real YouTube videos whose IDs are meaningful English words and phrases — 
+                discovered by brute-force word generation.
+            </p>
+        </header>
+
+        <!-- Stats -->
+        <div class="stats-bar">
+            <div class="stat-card" id="stat-found">
+                <div class="stat-label">Videos Found</div>
+                <div class="stat-value">{{ total_found }}</div>
+            </div>
+            <div class="stat-card" id="stat-checked">
+                <div class="stat-label">IDs Checked</div>
+                <div class="stat-value">{{ "{:,}".format(total_checked) }}</div>
+            </div>
+            <div class="stat-card" id="stat-rate">
+                <div class="stat-label">Hit Rate</div>
+                <div class="stat-value">
+                    {% if total_checked > 0 %}
+                        {{ "%.4f"|format(total_found / total_checked * 100) }}%
+                    {% else %}
+                        —
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        {% if results %}
+        <div class="section-title">
+            <h2>🎯 Discoveries</h2>
+            <span class="count-badge">{{ total_found }} found</span>
+        </div>
+
+        <div class="video-grid" id="video-grid">
+            {% for video in results %}
+            <div class="video-card">
+                <a href="{{ video.url }}" target="_blank" rel="noopener noreferrer">
+                    <div class="thumbnail-wrapper">
+                        {% if video.thumbnail %}
+                        <img src="{{ video.thumbnail }}" 
+                             alt="{{ video.title }}"
+                             loading="lazy">
+                        {% endif %}
+                        <div class="thumbnail-overlay"></div>
+                        <div class="play-btn">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+                <div class="video-info">
+                    <div class="video-id-badge" onclick="copyId('{{ video.video_id }}', event)" title="Click to copy ID">
+                        <span>{{ video.video_id }}</span>
+                        <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                        </svg>
+                    </div>
+                    <a href="{{ video.url }}" target="_blank" rel="noopener noreferrer">
+                        <div class="video-title">{{ video.title }}</div>
+                    </a>
+                    <div class="video-author">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                        <span>{{ video.author }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <h3>No Videos Discovered Yet</h3>
+            <p>
+                Start the scanner to begin hunting for YouTube videos with meaningful English word IDs.
+            </p>
+            <div class="code-block">python main.py</div>
+        </div>
+        {% endif %}
+
+        <footer class="footer">
+            <p>YouTube Word Hunter — Built with curiosity 🎬</p>
+        </footer>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">Copied!</div>
+
+    <!-- Refresh button -->
+    <button class="refresh-btn" id="refresh-btn" title="Refresh results">
+        <svg viewBox="0 0 24 24">
+            <path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+        </svg>
+    </button>
+
+    <script>
+        // Copy video ID to clipboard
+        function copyId(id, event) {
+            event.preventDefault();
+            event.stopPropagation();
+            navigator.clipboard.writeText(id).then(() => {
+                showToast(`Copied: ${id}`);
+            });
+        }
+
+        // Toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        // Refresh button
+        document.getElementById('refresh-btn').addEventListener('click', function() {
+            this.classList.add('spinning');
+            setTimeout(() => {
+                window.location.reload();
+            }, 400);
+        });
+
+        // Auto-refresh every 30 seconds if scanner is running
+        let autoRefreshInterval = null;
+
+        async function checkForUpdates() {
+            try {
+                const resp = await fetch('/api/results');
+                const data = await resp.json();
+                const currentCount = {{ total_found }};
+                if (data.total_found > currentCount) {
+                    showToast(`🎉 ${data.total_found - currentCount} new video(s) found!`);
+                    setTimeout(() => window.location.reload(), 1500);
+                }
+            } catch (e) {
+                // silently fail
+            }
+        }
+
+        // Poll for updates every 15 seconds
+        autoRefreshInterval = setInterval(checkForUpdates, 15000);
+    </script>
+</body>
+</html>
